@@ -2,8 +2,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-
-#include "getkey.h"
+#include <ncurses.h>
+#include <signal.h>
 
 #define BOARD_WIDTH 50
 #define BOARD_HEIGHT 20
@@ -20,7 +20,6 @@
 #define APPLE 'O' 
 #define SNAKE 'X'
 
-#define OK 0
 #define DEAD -1
 
 struct position {
@@ -39,24 +38,53 @@ struct gameState {
     int wrap;
 };
 
+static void resetTerminal_(int ignore);
 static void renderBoard_(struct gameState *state);
+static void updateScore_(int level);
 static int normalizeIndex_(int index);
 static void updateGame_(struct gameState *state);
 static void resetPlayer_(struct gameState *state);
 static void spawnApple_(struct gameState *state);
 static void initializeGameState_(struct gameState *state);
 static void resetBoard_(struct gameState *state);
+static void printBorder_(void);
 static void printBoard_(struct gameState *state);
-static void printBoardHorizontalBorder_(void);
 static void handleInput_(struct gameState *state);
 
 int main(int argc, char *argv[])
 {
     struct gameState state;
-    initializeGameState_(&state);
-    state.wrap = (argc == 2);
+    int terminalSize[2];
 
-    printf("\033[s");
+    (void)signal(SIGINT, resetTerminal_);
+
+    initscr();
+    noecho();
+    cbreak();
+    nodelay(stdscr, TRUE);
+    keypad(stdscr, TRUE);
+    curs_set(0);
+
+    getmaxyx(stdscr, terminalSize[0], terminalSize[1]);
+    if (terminalSize[0] < (BOARD_HEIGHT+3))
+    {
+        endwin();
+        fprintf(stderr, "Minimum terminal height of %d lines required.\n",
+                                                                BOARD_HEIGHT+3);
+        return 1;
+    }
+    if (terminalSize[1] < (BOARD_WIDTH+2))
+    {
+        endwin();
+        fprintf(stderr, "Minimum terminal width of %d columns required.\n",
+                                                                 BOARD_WIDTH+2);
+        return 2;
+    }
+
+    initializeGameState_(&state);
+    printBorder_();
+    state.wrap = (argc == 2);
+    refresh();
 
     while(OK == state.error)
     {
@@ -65,36 +93,36 @@ int main(int argc, char *argv[])
         handleInput_(&state);
         updateGame_(&state);
         printBoard_(&state);
+        refresh();
         nanosleep(&wait, NULL);
     }
+    getch();
+    endwin();
     return 0;
+}
+
+static void resetTerminal_(int ignore)
+{
+    endwin();
+    exit(3);
 }
 
 static void handleInput_(struct gameState *state)
 {
-    int key = getkey();
-    int nextKey = key;
-    while (nextKey != -1)
-    {
-        nextKey = getkey();
-        if (nextKey != -1)
-        {
-            key = nextKey;
-        }
-    }
+    int key = getch();
 
     switch(key)
     {
-        case UP:
-        case DOWN:
-        case LEFT:
-        case RIGHT:
+        case KEY_UP:
+        case KEY_DOWN:
+        case KEY_LEFT:
+        case KEY_RIGHT:
             state->direction = key;
             break;
-        case QUIT:
+        case 'q':
             state->error = QUIT;
             break;
-        case -1:
+        case ERR:
         default:
             break;
     }
@@ -105,7 +133,8 @@ static void initializeGameState_(struct gameState *state)
     resetPlayer_(state);
     spawnApple_(state);
     state->level = 1;
-    state->direction = HALT; 
+    updateScore_(state->level);
+    state->direction = HALT;
     renderBoard_(state);
     state->error = OK;
 }
@@ -130,6 +159,11 @@ static void spawnApple_(struct gameState *state)
 static void resetBoard_(struct gameState *state)
 {
     memset(state->board, ' ', sizeof(state->board));
+}
+
+static void updateScore_(int level)
+{
+    mvprintw(0, 0, "Snake CLI - lvl %-3d", level);
 }
 
 static void renderBoard_(struct gameState *state)
@@ -163,16 +197,16 @@ static void updateGame_(struct gameState *state)
 
     switch (state->direction)
     {
-        case UP:
+        case KEY_UP:
             dy = -1;
             break;
-        case DOWN:
+        case KEY_DOWN:
             dy = 1;
             break;
-        case LEFT:
+        case KEY_LEFT:
             dx = -1;
             break;
-        case RIGHT:
+        case KEY_RIGHT:
             dx = 1;
             break;
         case HALT:
@@ -194,6 +228,7 @@ static void updateGame_(struct gameState *state)
         if (nextPlayer->x == state->apple.x && nextPlayer->y == state->apple.y)
         {
             ++state->level;
+            updateScore_(state->level);
             spawnApple_(state);
         }
         else if(nextPlayer->x < 0 || nextPlayer->x >= BOARD_WIDTH ||
@@ -225,36 +260,30 @@ static int normalizeIndex_(int index)
     return index;
 }
 
+static void printBorder_(void)
+{
+    mvaddch(1, 0, ACS_ULCORNER);
+    hline(ACS_HLINE, BOARD_WIDTH);
+    mvaddch(1, BOARD_WIDTH+1, ACS_URCORNER);
+    mvvline(2, 0, ACS_VLINE, BOARD_HEIGHT);
+    mvvline(2, BOARD_WIDTH+1, ACS_VLINE, BOARD_HEIGHT);
+    mvaddch(2+BOARD_HEIGHT, 0, ACS_LLCORNER);
+    hline(ACS_HLINE, BOARD_WIDTH);
+    mvaddch(2+BOARD_HEIGHT, BOARD_WIDTH+1, ACS_LRCORNER);
+}
+
 static void printBoard_(struct gameState *state)
 {
     int i;
     int j;
 
-    (void)printf("Snake CLI - lvl %d\n", state->level);
-    printBoardHorizontalBorder_();
     for (i=0; i<BOARD_HEIGHT; ++i)
     {
-        (void)printf("|");
+        move(i+2, 1);
         for (j=0; j<BOARD_WIDTH; ++j)
         {
-            (void)printf("%c", state->board[i][j]);
+            addch(state->board[i][j]);
         }
-        (void)printf("|\n");
     }
-    printBoardHorizontalBorder_();
-    if (OK == state->error)
-    {
-        printf("\033[u");
-    }
-}
-
-static void printBoardHorizontalBorder_(void)
-{
-    int i;
-    for (i = 0; i < (BOARD_WIDTH + 2); ++i)
-    {
-        (void)printf("=");
-    }
-    (void)printf("\n");
 }
 

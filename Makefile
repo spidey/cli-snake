@@ -1,13 +1,10 @@
 all: snake
 
-snake: snake.o getkey.o
-	gcc -o $@ $^
+snake: snake.o
+	gcc -o $@ $^ -lncurses
 
-snake.o: snake.c getkey.h
-	gcc -o $@ -c $< -Wall
-
-getkey.o: getkey.c getkey.h
-	gcc -o $@ -c $< -Wall
+snake.o: snake.c
+	gcc -Wall -c -g -o $@ $<
 
 clean:
-	rm -rf snake.o getkey.o snake.exe snake
+	rm -rf snake.o snake.exe snake
