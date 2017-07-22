@@ -4,7 +4,7 @@ snake: snake.o
 	gcc -o $@ $^ -lncurses
 
 snake.o: snake.c
-	gcc -Wall -c -g -o $@ $<
+	gcc -Wall -Wextra -c -g -o $@ $<
 
 tags: snake.c
 	ctags -R .

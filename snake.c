@@ -57,6 +57,7 @@ int main(int argc, char *argv[])
     struct gameState state;
     int terminalSize[2];
 
+    (void)argv;
     (void)signal(SIGINT, resetTerminal_);
 
     initscr();
@@ -108,6 +109,7 @@ int main(int argc, char *argv[])
 
 static void resetTerminal_(int ignore)
 {
+    (void)ignore;
     endwin();
     exit(3);
 }
