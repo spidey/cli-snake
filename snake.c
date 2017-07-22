@@ -122,6 +122,28 @@ static void handleInput_(struct gameState *state)
 
     switch(key)
     {
+        case 'w':
+        case 'k':
+            key = KEY_UP;
+            break;
+        case 's':
+        case 'j':
+            key = KEY_DOWN;
+            break;
+        case 'a':
+        case 'h':
+            key = KEY_LEFT;
+            break;
+        case 'l':
+        case 'd':
+            key = KEY_RIGHT;
+            break;
+        default:
+            break;
+    }
+
+    switch(key)
+    {
         case KEY_UP:
         case KEY_DOWN:
         case KEY_LEFT:
