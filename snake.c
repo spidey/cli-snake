@@ -53,6 +53,7 @@ static void printBorder_(void);
 static void printBoard_(struct gameState *state);
 static void handleInput_(struct gameState *state);
 static int isNewDirectionValid_(int oldDirection, int newDirection);
+static void showHelpFooter_(void);
 
 int main(int argc, char *argv[])
 {
@@ -168,6 +169,7 @@ static void initializeGameState_(struct gameState *state)
     spawnApple_(state);
     state->level = 1;
     updateScore_(state->level);
+    showHelpFooter_();
     state->direction = HALT;
     renderBoard_(state);
     state->error = OK;
@@ -197,7 +199,12 @@ static void resetBoard_(struct gameState *state)
 
 static void updateScore_(int level)
 {
-    mvprintw(0, 0, "Snake CLI - lvl %-3d", level);
+    static const char message_[] = "Snake CLI - lvl %d";
+    static const int messageShift_ = (GAME_WIDTH - (sizeof(message_))) / 2;
+    mvchgat(0, 0, GAME_WIDTH, A_BOLD, 1, NULL);
+    attron(COLOR_PAIR(1) | A_BOLD);
+    mvprintw(0, messageShift_, message_, level);
+    attroff(COLOR_PAIR(1) | A_BOLD);
 }
 
 static void renderBoard_(struct gameState *state)
@@ -345,4 +352,14 @@ static int isNewDirectionValid_(int oldDirection, int newDirection)
     int invalid = invalidDirections[(oldDirection - DOWN)];
 
     return (newDirection != invalid);
+}
+
+static void showHelpFooter_(void)
+{
+    static const char helpMessage_[] = "Use arrows/wasd/hjkl to move. "
+                                                                   "q to quit.";
+    static const int messageShift_ = (GAME_WIDTH - sizeof(helpMessage_)) / 2;
+
+    mvchgat(GAME_HEIGHT - 1, 0, GAME_WIDTH, 1, A_NORMAL, NULL);
+    mvprintw(GAME_HEIGHT - 1, messageShift_, helpMessage_);
 }
