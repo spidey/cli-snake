@@ -64,6 +64,10 @@ int main(int argc, char *argv[])
     nodelay(stdscr, TRUE);
     keypad(stdscr, TRUE);
     curs_set(0);
+    start_color();
+    init_pair(1, COLOR_BLACK, COLOR_WHITE);
+    init_pair(2, COLOR_GREEN, COLOR_GREEN);
+    init_pair(3, COLOR_RED, COLOR_RED);
 
     getmaxyx(stdscr, terminalSize[0], terminalSize[1]);
     if (terminalSize[0] < (BOARD_HEIGHT+3))
@@ -262,6 +266,7 @@ static int normalizeIndex_(int index)
 
 static void printBorder_(void)
 {
+    attron(COLOR_PAIR(1));
     mvaddch(1, 0, ACS_ULCORNER);
     hline(ACS_HLINE, BOARD_WIDTH);
     mvaddch(1, BOARD_WIDTH+1, ACS_URCORNER);
@@ -270,6 +275,7 @@ static void printBorder_(void)
     mvaddch(2+BOARD_HEIGHT, 0, ACS_LLCORNER);
     hline(ACS_HLINE, BOARD_WIDTH);
     mvaddch(2+BOARD_HEIGHT, BOARD_WIDTH+1, ACS_LRCORNER);
+    attroff(COLOR_PAIR(1));
 }
 
 static void printBoard_(struct gameState *state)
@@ -282,7 +288,23 @@ static void printBoard_(struct gameState *state)
         move(i+2, 1);
         for (j=0; j<BOARD_WIDTH; ++j)
         {
-            addch(state->board[i][j]);
+            int color;
+            char boardChar = state->board[i][j];
+            switch (boardChar)
+            {
+                case APPLE:
+                    color = 3;
+                    break;
+                case SNAKE:
+                    color = 2;
+                    break;
+                default:
+                    color = 1;
+                    break;
+            }
+            attron(COLOR_PAIR(color));
+            addch(boardChar);
+            attroff(COLOR_PAIR(color));
         }
     }
 }
