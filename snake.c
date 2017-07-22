@@ -10,11 +10,11 @@
 #define INITIAL_SIZE 5
 #define FPS 10
 
-#define HALT 0
-#define UP 65
-#define DOWN 66
-#define LEFT 68
-#define RIGHT 67
+#define DOWN KEY_DOWN
+#define UP KEY_UP
+#define LEFT KEY_LEFT
+#define RIGHT KEY_RIGHT
+#define HALT (KEY_RIGHT+1)
 #define QUIT 'q'
 
 #define APPLE 'O' 
@@ -50,6 +50,7 @@ static void resetBoard_(struct gameState *state);
 static void printBorder_(void);
 static void printBoard_(struct gameState *state);
 static void handleInput_(struct gameState *state);
+static int isNewDirectionValid_(int oldDirection, int newDirection);
 
 int main(int argc, char *argv[])
 {
@@ -121,7 +122,10 @@ static void handleInput_(struct gameState *state)
         case KEY_DOWN:
         case KEY_LEFT:
         case KEY_RIGHT:
-            state->direction = key;
+            if (isNewDirectionValid_(state->direction, key))
+            {
+                state->direction = key;
+            }
             break;
         case 'q':
             state->error = QUIT;
@@ -309,3 +313,10 @@ static void printBoard_(struct gameState *state)
     }
 }
 
+static int isNewDirectionValid_(int oldDirection, int newDirection)
+{
+    int invalidDirections[] = {UP, DOWN, RIGHT, LEFT, HALT};
+    int invalid = invalidDirections[(oldDirection - DOWN)];
+
+    return (newDirection != invalid);
+}
