@@ -7,6 +7,8 @@
 
 #define BOARD_WIDTH 50
 #define BOARD_HEIGHT 20
+#define GAME_WIDTH (BOARD_WIDTH + 2)
+#define GAME_HEIGHT (BOARD_HEIGHT + 4)
 #define INITIAL_SIZE 5
 #define FPS 10
 
@@ -72,18 +74,18 @@ int main(int argc, char *argv[])
     init_pair(3, COLOR_RED, COLOR_RED);
 
     getmaxyx(stdscr, terminalSize[0], terminalSize[1]);
-    if (terminalSize[0] < (BOARD_HEIGHT+3))
+    if (terminalSize[0] < (GAME_HEIGHT))
     {
         endwin();
         fprintf(stderr, "Minimum terminal height of %d lines required.\n",
-                                                                BOARD_HEIGHT+3);
+                                                                   GAME_HEIGHT);
         return 1;
     }
-    if (terminalSize[1] < (BOARD_WIDTH+2))
+    if (terminalSize[1] < (GAME_WIDTH))
     {
         endwin();
         fprintf(stderr, "Minimum terminal width of %d columns required.\n",
-                                                                 BOARD_WIDTH+2);
+                                                                    GAME_WIDTH);
         return 2;
     }
 
